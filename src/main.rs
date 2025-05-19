@@ -1,6 +1,8 @@
 use std::fs;
 use std::io::{BufReader, prelude::*};
 use std::net::{TcpListener, TcpStream};
+use std::thread;
+use std::time::Duration;
 #[tokio::main]
 
 async fn main() {
@@ -9,7 +11,7 @@ async fn main() {
     for i in listen_.incoming() {
         let i = i.unwrap();
 
-        handle_conn(i);
+        thread::spawn(|| handle_conn(i));
     }
 }
 
@@ -26,6 +28,17 @@ fn handle_conn(mut stream: TcpStream) {
         stream
             .write_all(
                 format!("{resp_status}\r\nContent-Length:{content_len}\r\n\r\n{html_content}")
+                    .as_bytes(),
+            )
+            .unwrap();
+    } else if req == "GET /sleep HTTP/1.1" {
+        thread::sleep(Duration::from_millis(500));
+        let resp_status: &str = "HTTP/1.1 200 OK";
+        let html_content: String = fs::read_to_string("index.html").unwrap();
+        let content_len: usize = html_content.len();
+        stream
+            .write_all(
+                format!("{resp_status}\r\n\r\nContent-Length:{content_len}\r\n\r\n{html_content}")
                     .as_bytes(),
             )
             .unwrap();
