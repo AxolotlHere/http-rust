@@ -1,17 +1,19 @@
+use crate::pool::ThreadPool;
 use std::fs;
 use std::io::{BufReader, prelude::*};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::time::Duration;
-#[tokio::main]
+mod pool;
 
-async fn main() {
+fn main() {
     let listen_ = TcpListener::bind("192.168.0.108:7878").unwrap(); //Result<> return
-
+    //Finite thread pool
+    let thread_pool = ThreadPool::new(5);
     for i in listen_.incoming() {
         let i = i.unwrap();
 
-        thread::spawn(|| handle_conn(i));
+        thread_pool.execute(|| handle_conn(i));
     }
 }
 
